@@ -143,8 +143,8 @@ class EMGFilters:
         self.m_sampleFreq   = sampleFreq
         self.m_notchFreq    = notchFreq
         self.m_bypassEnabled = True
-        if (((sampleFreq == SAMPLE_FREQ_500HZ) | (sampleFreq == SAMPLE_FREQ_1000HZ)) &
-            ((notchFreq == NOTCH_FREQ_50HZ) | (notchFreq == NOTCH_FREQ_60HZ))):
+        if (((sampleFreq == SAMPLE_FREQ_500HZ) or (sampleFreq == SAMPLE_FREQ_1000HZ)) and
+            ((notchFreq == NOTCH_FREQ_50HZ) or (notchFreq == NOTCH_FREQ_60HZ))):
             self.m_bypassEnabled = False
 
         self.LPF = FILTER_2nd(FILTER_TYPE.FILTER_TYPE_LOWPASS, self.m_sampleFreq)

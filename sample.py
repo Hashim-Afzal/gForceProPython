@@ -4,6 +4,8 @@
 import struct
 import threading
 import time
+import datetime
+import csv
 
 from gforce import DataNotifFlags, GForceProfile, NotifDataType
 
@@ -24,12 +26,25 @@ def get_firmware_version_cb(resp, firmware_version):
 packet_cnt = 0
 start_time = 0
 
+# Data stored in arrays of 8 for 8 channels
+# Data arrives in 16 chunks, 1 byte per channel, 8 bytes per entry
+number_entries = 2048
+saved_entries = []
+recording = False
 
 def ondata(data):
     if len(data) > 0:
         # print('[{0}] data.length = {1}, type = {2}'.format(time.time(), len(data), data[0]))
+        if (recording and len(saved_entries) < number_entries):
+            
+            # data will display incorrectly if accessing multiple rows
+            for i in range(16):
+                temp = [data[1 + 8*i], data[2 + 8*i], data[3 + 8*i], data[4 + 8*i], data[5 + 8*i], data[6 + 8*i], data[7 + 8*i], data[8 + 8*i]]
+                saved_entries.append(temp)
+            if (len(saved_entries) >= number_entries):
+                print("Finished recording data")
 
-        if data[0] == NotifDataType["NTF_QUAT_FLOAT_DATA"] and len(data) == 17:
+        elif data[0] == NotifDataType["NTF_QUAT_FLOAT_DATA"] and len(data) == 17:
             quat_iter = struct.iter_unpack("f", data[1:])
             quaternion = []
             for i in quat_iter:
@@ -45,8 +60,10 @@ def ondata(data):
             # eg. 8bpp mode, data[1] = channel[0], data[2] = channel[1], ... data[8] = channel[7]
             #                data[9] = channel[0] and so on
             # eg. 12bpp mode, {data[2], data[1]} = channel[0], {data[4], data[3]} = channel[1] and so on
-            # for i in range(1, 129):
-            #     print(data[i])
+
+            # data will display incorrectly if accessing multiple rows
+            # for i in range(16):
+            #    print(data[1 + 8*i], data[2 + 8*i], data[3 + 8*i], data[4 + 8*i], data[5 + 8*i], data[6 + 8*i], data[7 + 8*i], data[8 + 8*i])
             # end for
 
             global packet_cnt
@@ -69,28 +86,16 @@ def ondata(data):
 
                 start_time = time.time()
 
-        elif data[0] == NotifDataType["NTF_EMG_GEST_DATA"]:
-            # print(data)
-            if len(data) == 2:
-                ges = struct.unpack("<B", data[1:])
-                # print(f"ges_id:{ges[0]}")
+        # elif data[0] == NotifDataType["NTF_EMG_GEST_DATA"]:
+        #     # print(data)
+        #     if len(data) == 2:
+        #         ges = struct.unpack("<B", data[1:])
+        #         print("ges_id:{ges[0]}".format(ges=ges))
   
-            else:
-                ges = struct.unpack("<B", data[1:2])[0]
-                s = struct.unpack("<H", data[2:4])[0]
-                # print(f"ges_id:{ges}  strength:{s}")
-
-        # elif data[0] == NotifDataType["NTF_EMG_GEST_DATA"] and len(data) == 3:
-        #     ges_iter = struct.iter_unpack("f", data[1:])
-        #     ges = []
-        #     for i in ges_iter:
-        #         ges.append(i[0])
-        #     # end for
-        #     print(f"ges_id:{ges[0]}  probability:{ges[1]}")
-
-        # end if
-        # end if
-    # end if
+        #     else:
+        #         ges = struct.unpack("<B", data[1:2])[0]
+        #         s = struct.unpack("<H", data[2:4])[0]
+        #         print("ges_id:{ges}  strength:{s}".format(ges=ges, s=s))
 
 
 def print2menu():
@@ -104,7 +109,8 @@ def print2menu():
     print(
         "6: Get Raw EMG data(set EMG raw data config first please, press enter to stop)"
     )
-    print("7: Get Gesture ID(press enter to stop)")
+    print("7: Set recording Raw EMG data")
+    print("8: Save Raw EMG data to file (press enter to stop when finished)")
 
 
 if __name__ == "__main__":
@@ -112,6 +118,9 @@ if __name__ == "__main__":
     channelMask = 0xFF
     dataLen = 128
     resolution = 8
+
+    file_path = "Data/"
+    file_name = ""
 
     while True:
         GF = GForceProfile()
@@ -215,32 +224,54 @@ if __name__ == "__main__":
                     GF.stopDataNotification()
                     time.sleep(1)
                     GF.setDataNotifSwitch(DataNotifFlags["DNF_OFF"], set_cmd_cb, 1000)
-
+                
                 elif button == 7:
-                    flag = eval(
-                        input(
-                            "Please Press 0 to get the gesture ID and 1 to get both the gesture ID and the strength value(0 or 1): "
-                        )
+                    number_entries = eval(input("Please enter the number of entries you would like to save: "))
+                
+                elif button == 8:
+                    file_name = input("Please enter the file name: ")
+                    now = datetime.datetime.now().strftime("%H:%M:%S")
+                    file_name = file_name + "_" + now + ".csv"
+                    print("Data will be saved to {path}{name}".format(path = file_path, name = file_name))
+
+                    print("Starting data recording in:")
+                    print("3")
+                    time.sleep(1)
+                    print("2")
+                    time.sleep(1)
+                    print("1")
+
+                    recording = True
+                    GF.setEmgRawDataConfig(
+                        sampRate,
+                        channelMask,
+                        dataLen,
+                        resolution,
+                        cb=set_cmd_cb,
+                        timeout=1000,
                     )
-                    if flag == 0:
-                        GF.setDataNotifSwitch(
-                            DataNotifFlags["DNF_EMG_GESTURE"], set_cmd_cb, 1000
-                        )
-                    else:
-                        GF.setDataNotifSwitch(
-                            DataNotifFlags["DNF_EMG_GESTURE_STRENGTH"], set_cmd_cb, 1000
-                        )
+                    GF.setDataNotifSwitch(
+                        DataNotifFlags["DNF_EMG_RAW"], set_cmd_cb, 1000
+                    )                 
                     time.sleep(1)
                     GF.startDataNotification(ondata)
 
                     button = input()
+                    recording = False
                     print("Stopping...")
                     GF.stopDataNotification()
                     time.sleep(1)
                     GF.setDataNotifSwitch(DataNotifFlags["DNF_OFF"], set_cmd_cb, 1000)
-            # end while
+
+                    # Write data to file 
+                    print("----------------------")
+                    print("Writting data to file")
+                    file = open(file_path+file_name, "w+")
+                    writer = csv.writer(file)
+                    for row in saved_entries:
+                        writer.writerow(row)
+                    print("File written")
+                    print("----------------------")
+                    file.close()
 
             break
-        # end if
-    # end while
-# end if
