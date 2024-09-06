@@ -273,5 +273,6 @@ if __name__ == "__main__":
                     print("File written")
                     print("----------------------")
                     file.close()
+                    saved_entries = []
 
             break
