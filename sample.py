@@ -125,7 +125,7 @@ def ondata(data):
         #         print("ges_id:{ges}  strength:{s}".format(ges=ges, s=s))
 
 
-def print 2menu():
+def print2menu():
     print("_" * 75)
     print("0: Exit")
     print("1: Get Firmware Version")
