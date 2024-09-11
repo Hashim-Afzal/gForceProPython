@@ -26,32 +26,41 @@ def get_firmware_version_cb(resp, firmware_version):
 packet_cnt = 0
 start_time = 0
 
+# For 8 bit
 # Data stored in arrays of 8 for 8 channels
-# Data arrives in 16 chunks, 1 byte per channel, 8 bytes per entry
+# Data arrives in 16 chunks, 1 byte per channel, 8 bits per entry
+
+# For 12 bit
+# Data stored in arrays of 16 for 8 channels
+# Data arrives in 8 chunks, 2 bytes per channel, 16 bits per entry
+
 number_entries = 2048
 saved_entries = []
 saved_entries_filtered = []
 recording = False
-emgfilter = EMGFilter(500, 50, True, True, True)
+
+emgfilters = []
+for i in range(8):
+    emgfilters.append(EMGFilter(500, 50, True, True, False))
 
 def ondata(data):
     if len(data) > 0:
-        # print('[{0}] data.length = {1}, type = {2}'.format(time.time(), len(data), data[0]))
+        
         if (recording and len(saved_entries) < number_entries):
-            
-            # data will display incorrectly if accessing multiple rows
+            print('[{0}] data.length = {1}, type = {2}'.format(time.time(), len(data), data[0]))
+            raw_data = []
+
             for i in range(16):
-                temp = [data[1 + 8*i], data[2 + 8*i], data[3 + 8*i], data[4 + 8*i], data[5 + 8*i], data[6 + 8*i], data[7 + 8*i], data[8 + 8*i]]
-                saved_entries.append(temp)
+                # print(data[1 + 8*i], data[2 + 8*i], data[3 + 8*i], data[4 + 8*i], data[5 + 8*i], data[6 + 8*i], data[7 + 8*i], data[8 + 8*i])
+                raw_data.append([data[1 + 8*i], data[2 + 8*i], data[3 + 8*i], data[4 + 8*i], data[5 + 8*i], data[6 + 8*i], data[7 + 8*i], data[8 + 8*i]])
 
-            # filtered_data = []
-            # for i in range(1,129):
-            #     filtered_data.append(emgfilter.update(data[i]))
+            for row in raw_data:
+                saved_entries.append(row)
+                temp = []
+                for i in range(8):
+                    temp.append(emgfilters[i].update(row[i]))
+                saved_entries_filtered.append(temp)
 
-            # for i in range(16):
-            #     temp = filtered_data[8*i: 8*i + 8]
-            #     saved_entries_filtered.append(temp)
-                
             if (len(saved_entries) >= number_entries):
                 print("Finished recording data")
 
@@ -73,9 +82,16 @@ def ondata(data):
             # eg. 12bpp mode, {data[2], data[1]} = channel[0], {data[4], data[3]} = channel[1] and so on
 
             # data will display incorrectly if accessing multiple rows
+
+            # raw_data = []
             # for i in range(16):
-            #    print(data[1 + 8*i], data[2 + 8*i], data[3 + 8*i], data[4 + 8*i], data[5 + 8*i], data[6 + 8*i], data[7 + 8*i], data[8 + 8*i])
+            #     # print(data[1 + 8*i], data[2 + 8*i], data[3 + 8*i], data[4 + 8*i], data[5 + 8*i], data[6 + 8*i], data[7 + 8*i], data[8 + 8*i])
+            #     raw_data.append([data[1 + 8*i], data[2 + 8*i], data[3 + 8*i], data[4 + 8*i], data[5 + 8*i], data[6 + 8*i], data[7 + 8*i], data[8 + 8*i]])
             # end for
+            # print(raw_data)
+
+            # for i in range(8):
+            #     print((data[2 + 16*i]<<4) + data[1 + 16*i])
 
             global packet_cnt
             global start_time
@@ -276,7 +292,7 @@ if __name__ == "__main__":
 
                     # Write data to file 
                     print("----------------------")
-                    print("Writting data to file")
+                    print("Writting raw data to file")
                     file = open(file_path+file_name+".csv", "w+")
                     writer = csv.writer(file)
                     for row in saved_entries:
@@ -285,9 +301,17 @@ if __name__ == "__main__":
                     print("----------------------")
                     file.close()
 
-                    # print(saved_entries[-1])
-                    # print(saved_entries_filtered[-1])
+                    # Write filtered data to file 
+                    print("----------------------")
+                    print("Writting filtered data to file")
+                    file = open(file_path+file_name+ "_filtered.csv", "w+")
+                    writer = csv.writer(file)
+                    for row in saved_entries_filtered:
+                        writer.writerow(row)
+                    print("File written")
+                    print("----------------------")
 
                     saved_entries = []
+                    saved_entries_filtered = []
 
             break
