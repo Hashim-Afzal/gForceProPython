@@ -167,16 +167,14 @@ class EMGFilter:
             # notch filter bypass
             output = inputValue
 
-        print(output)
         # second low pass filter
         if (self.m_lowpassFilterEnabled):
             output = self.LPF.update(output)
-        print(output)
+        
         # third high pass filter
         if (self.m_highpassFilterEnabled):
             output = self.HPF.update(output)
-        print(output)
-        print()
+
         return output
 
 if __name__ == "__main__":

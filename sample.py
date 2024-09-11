@@ -47,7 +47,7 @@ def ondata(data):
     if len(data) > 0:
         
         if (recording and len(saved_entries) < number_entries):
-            print('[{0}] data.length = {1}, type = {2}'.format(time.time(), len(data), data[0]))
+            # print('[{0}] data.length = {1}, type = {2}'.format(time.time(), len(data), data[0]))
             raw_data = []
 
             for i in range(16):
