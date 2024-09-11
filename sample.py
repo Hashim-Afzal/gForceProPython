@@ -6,7 +6,7 @@ import threading
 import time
 import datetime
 import csv
-
+from EMGFilters import EMGFilter
 from gforce import DataNotifFlags, GForceProfile, NotifDataType
 
 # An example of the callback function
@@ -30,7 +30,9 @@ start_time = 0
 # Data arrives in 16 chunks, 1 byte per channel, 8 bytes per entry
 number_entries = 2048
 saved_entries = []
+saved_entries_filtered = []
 recording = False
+emgfilter = EMGFilter(500, 50, True, True, True)
 
 def ondata(data):
     if len(data) > 0:
@@ -41,6 +43,15 @@ def ondata(data):
             for i in range(16):
                 temp = [data[1 + 8*i], data[2 + 8*i], data[3 + 8*i], data[4 + 8*i], data[5 + 8*i], data[6 + 8*i], data[7 + 8*i], data[8 + 8*i]]
                 saved_entries.append(temp)
+
+            # filtered_data = []
+            # for i in range(1,129):
+            #     filtered_data.append(emgfilter.update(data[i]))
+
+            # for i in range(16):
+            #     temp = filtered_data[8*i: 8*i + 8]
+            #     saved_entries_filtered.append(temp)
+                
             if (len(saved_entries) >= number_entries):
                 print("Finished recording data")
 
@@ -231,7 +242,7 @@ if __name__ == "__main__":
                 elif button == 8:
                     file_name = input("Please enter the file name: ")
                     now = datetime.datetime.now().strftime("%H:%M:%S")
-                    file_name = file_name + "_" + now + ".csv"
+                    file_name = file_name + "_" + now
                     print("Data will be saved to {path}{name}".format(path = file_path, name = file_name))
 
                     print("Starting data recording in:")
@@ -266,13 +277,17 @@ if __name__ == "__main__":
                     # Write data to file 
                     print("----------------------")
                     print("Writting data to file")
-                    file = open(file_path+file_name, "w+")
+                    file = open(file_path+file_name+".csv", "w+")
                     writer = csv.writer(file)
                     for row in saved_entries:
                         writer.writerow(row)
                     print("File written")
                     print("----------------------")
                     file.close()
+
+                    # print(saved_entries[-1])
+                    # print(saved_entries_filtered[-1])
+
                     saved_entries = []
 
             break
