@@ -167,32 +167,34 @@ class EMGFilter:
             # notch filter bypass
             output = inputValue
 
+        print(output)
         # second low pass filter
         if (self.m_lowpassFilterEnabled):
             output = self.LPF.update(output)
-        
+        print(output)
         # third high pass filter
         if (self.m_highpassFilterEnabled):
             output = self.HPF.update(output)
-
+        print(output)
+        print()
         return output
 
 if __name__ == "__main__":
-    emgfilter = EMGFilter(SAMPLE_FREQ_500HZ, NOTCH_FREQ_50HZ, True, True, False)
+    emgfilter = EMGFilter(SAMPLE_FREQ_500HZ, NOTCH_FREQ_50HZ, True, False, False)
     # test_values = [[125, 123, 117, 118, 117, 120, 130, 125], [123, 125, 122, 123, 118, 121, 130, 128]]
-    # test_values = [125, 123, 126, 111, 115, 126, 125, 108, 120, 128, 129, 121, 120, 124, 125, 112]
+    # test_values = [125, 123, 126, 111, 115, 126, 256, 108, 245, 128, 129, 30, 120, 20, 125, 112]
     test_values = [125, 123, 126, 111, 115, 126, 125, 108, 120, 128, 129, 121, 120, 124, 125, 112, 
     109, 124, 123, 122, 114, 114, 124, 133, 125, 101, 119, 123, 126, 126, 116, 111, 128, 123, 132, 
     134, 115, 100, 114, 131, 124, 131, 119, 120, 117, 115, 121, 121, 124, 121, 120, 117, 123, 124, 
     117, 122, 119, 121, 120, 119, 116, 125, 125, 113, 121, 126, 127, 114, 114, 115, 123, 116, 126, 
     126, 117, 116, 132, 121, 117, 123, 116, 115, 116, 129, 123, 121, 118, 114, 125, 114, 113, 126, 
-    125, 125, 119, 116, 115, 127, 125, 122]
-    
+    125, 125, 119, 116, 256, 127, 125, 122]
+
     filtered_test = []
     for row in test_values:
         temp = []
         temp.append(emgfilter.update(row))
         filtered_test.append(temp)
 
-    for i in range(100):
+    for i in range(len(test_values)):
         print(test_values[i], filtered_test[i])

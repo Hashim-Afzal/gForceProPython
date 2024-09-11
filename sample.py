@@ -34,14 +34,14 @@ start_time = 0
 # Data stored in arrays of 16 for 8 channels
 # Data arrives in 8 chunks, 2 bytes per channel, 16 bits per entry
 
-number_entries = 2048
+number_entries = 4096
 saved_entries = []
 saved_entries_filtered = []
 recording = False
 
 emgfilters = []
 for i in range(8):
-    emgfilters.append(EMGFilter(500, 50, True, True, False))
+    emgfilters.append(EMGFilter(500, 50, True, False, False))
 
 def ondata(data):
     if len(data) > 0:
@@ -125,7 +125,7 @@ def ondata(data):
         #         print("ges_id:{ges}  strength:{s}".format(ges=ges, s=s))
 
 
-def print2menu():
+def print 2menu():
     print("_" * 75)
     print("0: Exit")
     print("1: Get Firmware Version")
@@ -293,22 +293,22 @@ if __name__ == "__main__":
                     # Write data to file 
                     print("----------------------")
                     print("Writting raw data to file")
-                    file = open(file_path+file_name+".csv", "w+")
+                    file = open(file_path+"Raw/"+file_name+".csv", "w+")
                     writer = csv.writer(file)
                     for row in saved_entries:
                         writer.writerow(row)
-                    print("File written")
+                    print("File written to: " + file_path+"Raw/"+file_name+".csv")
                     print("----------------------")
                     file.close()
 
                     # Write filtered data to file 
                     print("----------------------")
                     print("Writting filtered data to file")
-                    file = open(file_path+file_name+ "_filtered.csv", "w+")
+                    file = open(file_path+"Filtered/"+file_name+ "_filtered.csv", "w+")
                     writer = csv.writer(file)
                     for row in saved_entries_filtered:
                         writer.writerow(row)
-                    print("File written")
+                    print("File written"+ file_path+"Filtered/"+file_name+ "_filtered.csv")
                     print("----------------------")
 
                     saved_entries = []
